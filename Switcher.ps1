@@ -131,7 +131,7 @@ turn "Off" "ReflectorLight"
 #turn "off" "Thrust"
 #turn "off" "MotorSuspension"
 #turn "off" "VirtualMass"
-
+#turn "off" "Thrust"
 
 
 
