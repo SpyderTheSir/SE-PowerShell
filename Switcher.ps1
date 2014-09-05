@@ -41,6 +41,27 @@ Write-Output "Loading XML $filePath... Please hold caller"
 $ns = New-Object System.Xml.XmlNamespaceManager($myXML.NameTable)
 $ns.AddNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance")
 
+function wipe {
+    $desc = $args[0]; $confirm = $args[1]; $wiped = 0
+    $objects = $($myXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $ns))
+
+    if ($($objects.count) -gt 0) {
+        if ($confirm) {
+            #Just delete, don't ask
+            foreach ($object in $objects) { $object.ParentNode.removeChild($object) }
+            Write-Out "Confirm passed - Deleted $($objects.count) $desc items without prompt"
+        } else {
+            #Check
+            Write-Output "I have found $($objects.count) $desc items for deletion."
+            if ((Read-Host "Do you want to delete them? y/n").ToLower() -eq "y") {
+                foreach ($object in $objects) { $object.ParentNode.removeChild($object) }
+            }
+        }
+    } else {
+        Write-Output "No $desc found"
+    }
+}
+
 function turn {
     $desc = $args[1]; $onOff = $args[0] #Yeah, I know I could just use $args[x] thruout, but this is more readable. Deal.
     $changed = 0; $unchanged = 0; $onOff = $onOff.ToLower(); $count = 0
@@ -71,6 +92,10 @@ function turn {
     }
 }
 
+function saveIt {
+    $myXML.Save($filePath)
+}
+
 <#
  ===========
  = ACTIONS =
@@ -79,7 +104,7 @@ function turn {
 
 # -=Lights=-
 turn "Off" "ReflectorLight"
-#turn "Off" "InteriorLight"
+#turn "On" "InteriorLight"
 
 # -=Drills + Welders=-
 #turn "off" "Drill"
@@ -133,7 +158,11 @@ turn "Off" "ReflectorLight"
 #turn "off" "VirtualMass"
 #turn "off" "Thrust"
 
+# -=New Functions, use with care=-
+#wipe "MotorStator"
+#wipe "MotorRotor"
+
 
 
 #Commit changes
-$myXML.Save($filePath)
+saveIt
