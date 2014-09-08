@@ -1,7 +1,7 @@
 <#
 
     Spyder's Space Engineers World Editor Script
-    =====================================++++===
+    ============================================
     
     DESCRIPTION:
     Turns things on! and off! (turn "on" "InteriorLight")
@@ -205,7 +205,7 @@ if ([xml]$mapXML = Get-Content $mapPath) {
 #saveIt
 
     } else {
-        Write-Output "Config Load failed :( Check your configPath is correct? I attempted to load:"
+        Write-Output "Config Load failed :( Check your mapPath is correct? I attempted to load:"
         Write-Output $configPath
     }
 } else {
