@@ -1,21 +1,26 @@
 <#
 
-    Spyder's Space Engineers Switcher Script
-    ========================================
+    Spyder's Space Engineers World Editor Script
+    =====================================++++===
     
     DESCRIPTION:
-    Turns things on! and off!
+    Turns things on! and off! (turn "on" "InteriorLight")
+    Delete things! (wipe "Drill")
+    Check for rule violations! (checkMaxAllowed "Drill" 36)
+    Count things! (count "Drill")
 
     USAGE:
-    Change the filePath below to suit, or just copy this script and your SANDBOX file into C:\Temp
+    Change the filePath below to suit.
     Scroll down the the section that says ACTIONS
     You'll see a lot of 'turn "on" "thing!"' entries. Usage is fairly plain english, in that turn "on" and turn "off" will both work.
     The third variable is the xsi:type in the save XML file but with the 'MyObjectBuilder_' removed.
+    Valid block values are all written in down below and commented out!
+    You need to uncomment saveIt at the end if you're modifying this for automated use
 
-    Valid options are:
-    ... all written in down below!
-
-    Without adjustment all this script will now do is turn off all the spotlights in your world.
+    **Without adjustment this script will not do anything!**
+    
+    I actually use it within the PowerShell ISE so I can hit play, issue commands directly, then saveIt
+    
     In order to make an action trigger, delete the # in front of the line, this is a powershell comment.
     Don't delete the #'s in front of the -=Description=- lines tho, these are just for readability
     To stop it doing something, just add the # back!
@@ -33,16 +38,10 @@
 #>
 
 Param(
+    # This is the default location if you're running as local/console as the 'Administrator' user. Not the best example.
   [string]$mapPath = "C:\Users\Administrator\AppData\Roaming\SpaceEngineersDedicated\Saves\Map\SANDBOX_0_0_0_.sbs",          #SANDBOX_0_0_0_.sbs map file
   [string]$configPath = "C:\Users\Administrator\AppData\Roaming\SpaceEngineersDedicated\Saves\Map\Sandbox.sbc"               #Sandbox.sbc config file
 )
-
-Write-Output "Loading Map XML $mapPath... Please hold caller"
-[xml]$mapXML = Get-Content $mapPath
-Write-Output "Loading Config XML $mapPath... Please hold caller"
-[xml]$configXML = Get-Content $configPath
-$ns = New-Object System.Xml.XmlNamespaceManager($mapXML.NameTable)
-$ns.AddNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance")
 
 function wipe {
     $desc = $args[0]; $confirm = $args[1]; $wiped = 0
@@ -117,6 +116,15 @@ function turn {
 function saveIt {
     $mapXML.Save($mapPath)
 }
+
+#Load files...
+Write-Output "Loading Map XML $mapPath... Please hold caller"
+if ([xml]$mapXML = Get-Content $mapPath) {
+    Write-Output "Map loaded! Loading Config XML $mapPath... Please hold caller"
+    if ([xml]$configXML = Get-Content $configPath) {
+        Write-Output "Config loaded!"
+        $ns = New-Object System.Xml.XmlNamespaceManager($mapXML.NameTable)
+        $ns.AddNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance")
 
 <#
  ===========
@@ -195,3 +203,12 @@ function saveIt {
 
 #Commit changes
 #saveIt
+
+    } else {
+        Write-Output "Config Load failed :( Check your configPath is correct? I attempted to load:"
+        Write-Output $configPath
+    }
+} else {
+    Write-Output "Map Load failed :( Check your configPath is correct? I attempted to load:"
+    Write-Output $mapPath
+}
