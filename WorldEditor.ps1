@@ -4,10 +4,10 @@
     ============================================
     
     DESCRIPTION:
-    Turns things on! and off! (turn "on" "InteriorLight")
-    Delete things! (wipe "Drill")
-    Check for rule violations! (checkMaxAllowed "Drill" 36)
-    Count things! (count "Drill")
+    Turns things on! and off! (turn on InteriorLight)
+    Delete things! (wipe Drill)
+    Check for rule violations! (checkMaxAllowed Drill 36)
+    Count things! (count Drill)
 
     USAGE:
     Change the filePath below to suit.
@@ -133,73 +133,73 @@ if ([xml]$mapXML = Get-Content $mapPath) {
 #>
 
 # -=Lights=-
-#turn "Off" "ReflectorLight"
-#turn "On" "InteriorLight"
+#turn off ReflectorLight
+#turn On InteriorLight
 
 # -=Drills + Welders=-
-#turn "off" "Drill"
-#turn "off" "ShipWelder"
-#turn "Off" "ShipGrinder"
+#turn off Drill
+#turn off ShipWelder
+#turn off ShipGrinder
 
 
 # -=Pistons and Rotors=-
-#turn "off" "MotorStator"
-#turn "off" "PistonBase"
+#turn off MotorStator
+#turn off PistonBase
 
 # -=Merge Blocks/Connectors=-
-#turn "off" "MergeBlock"
-#turn "off" "ShipConnector" #Station
-#turn "Off" "Connector"     #Ship
-#turn "off" "Collector"
+#turn off MergeBlock
+#turn off ShipConnector #Station
+#turn Off Connector     #Ship
+#turn off Collector
 
 # -=Guns Etc=-
-#turn "off" "InteriorTurret"
-#turn "off" "LargeGatlingTurret"
-#turn "off" "LargeMissileTurret"
-#turn "off" "Decoy"
+#turn off InteriorTurret
+#turn off LargeGatlingTurret
+#turn off LargeMissileTurret
+#turn off Decoy
 
 # -=Factories=-
-#turn "off" "Assembler"
-#turn "off" "Refinery"
+#turn off Assembler
+#turn off Refinery
 
 # -=Transmitters=-
-#turn "off" "Beacon"
-#turn "Off" "RadioAntenna"
+#turn off Beacon
+#turn off RadioAntenna
 
 # -=Power=-
-#turn "off" "Reactor"
-#turn "off" "BatteryBlock"
-#turn "off" "SolarPanel"
-#turn "off" "Door"
+#turn off Reactor
+#turn off BatteryBlock
+#turn off SolarPanel
+#turn off Door
 
 # -=Other Station Blocks=-
-#turn "off" "GravityGenerator"
-#turn "off" "GravityGeneratorSphere"
-#turn "off" "MedicalRoom"
-#turn "Off" "CameraBlock"
-#turn "off" "SensorBlock"
+#turn off GravityGenerator
+#turn off GravityGeneratorSphere
+#turn off MedicalRoom
+#turn off CameraBlock
+#turn off SensorBlock
 
 # -=Ship things=-
-#turn "off" "OreDetector"
-#turn "off" "Gyro"
-#turn "off" "LandingGear"
-#turn "off" "Thrust"
-#turn "off" "MotorSuspension"
-#turn "off" "VirtualMass"
-#turn "off" "Thrust"
+#turn off OreDetector
+#turn off Gyro
+#turn off LandingGear
+#turn off Thrust
+#turn off MotorSuspension
+#turn off VirtualMass
+#turn off Thrust
 
 # -=New Functions, use with care=-
-#countBlocks "Drill"
-#countBlocks "MotorStator"
-#countBlocks "MotorRotor"
+#countBlocks Drill
+#countBlocks MotorStator
+#countBlocks MotorRotor
 
 # Deletes blocks, default action is to prompt with a value. If you use 'wipe "MotorStator" $true' instead it will delete without warning!
-#wipe "MotorStator"
-#wipe "MotorRotor"
-#wipe "SensorBlock"
+#wipe MotorStator
+#wipe MotorRotor
+#wipe SensorBlock
 
 # We have a rule on the server that only allows 36 drills per grid. I automated this :)
-#checkMaxAllowed "Drill" 36
+#checkMaxAllowed Drill 36
 
 #Commit changes
 #saveIt
