@@ -33,17 +33,20 @@
 #>
 
 Param(
-  [string]$filePath = "C:\Temp\SANDBOX_0_0_0_.sbs"          #Save file goes here.
+  [string]$mapPath = "C:\Users\Administrator\AppData\Roaming\SpaceEngineersDedicated\Saves\Map\SANDBOX_0_0_0_.sbs",          #SANDBOX_0_0_0_.sbs map file
+  [string]$configPath = "C:\Users\Administrator\AppData\Roaming\SpaceEngineersDedicated\Saves\Map\Sandbox.sbc"               #Sandbox.sbc config file
 )
 
-Write-Output "Loading XML $filePath... Please hold caller"
-[xml]$myXML = Get-Content $filePath
-$ns = New-Object System.Xml.XmlNamespaceManager($myXML.NameTable)
+Write-Output "Loading Map XML $mapPath... Please hold caller"
+[xml]$mapXML = Get-Content $mapPath
+Write-Output "Loading Config XML $mapPath... Please hold caller"
+[xml]$configXML = Get-Content $configPath
+$ns = New-Object System.Xml.XmlNamespaceManager($mapXML.NameTable)
 $ns.AddNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance")
 
 function wipe {
     $desc = $args[0]; $confirm = $args[1]; $wiped = 0
-    $objects = $($myXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $ns))
+    $objects = $($mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $ns))
 
     if ($($objects.count) -gt 0) {
         if ($confirm) {
@@ -62,10 +65,29 @@ function wipe {
     }
 }
 
+function countBlocks {
+    $desc = $args[0];
+    $objects = $($mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $ns))
+    Write-Output "You have $($objects.count) $desc in your world"
+}
+
+function checkMaxAllowed { #Work in Progress
+    $desc = $args[0]; $maxAllowed = $args[1]
+    $cubeGrids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" ,$ns)
+    foreach ($cubeGrid in $cubeGrids ){ # Scan thru Grids
+        $blocks = $cubeGrid.SelectNodes("CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $ns)
+        if ($($blocks.count) -gt $maxAllowed) { # Check for Violation
+            #Get owner of first drill
+            $culprit = $configXML.SelectSingleNode("//AllPlayers/PlayerItem[PlayerId='$($blocks[0].Owner)']", $ns)
+            Write-Output "EntityId $($cubeGrid.EntityID) has $($blocks.count) $desc. It belongs to $($culprit.Name)"
+        }
+    }
+}
+
 function turn {
     $desc = $args[1]; $onOff = $args[0] #Yeah, I know I could just use $args[x] thruout, but this is more readable. Deal.
     $changed = 0; $unchanged = 0; $onOff = $onOff.ToLower(); $count = 0
-    $objects = $($myXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $ns))
+    $objects = $($mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $ns))
     
     if ($onOff -eq "on") {
         foreach ($object in $objects) {
@@ -93,7 +115,7 @@ function turn {
 }
 
 function saveIt {
-    $myXML.Save($filePath)
+    $mapXML.Save($mapPath)
 }
 
 <#
@@ -103,7 +125,7 @@ function saveIt {
 #>
 
 # -=Lights=-
-turn "Off" "ReflectorLight"
+#turn "Off" "ReflectorLight"
 #turn "On" "InteriorLight"
 
 # -=Drills + Welders=-
@@ -159,10 +181,17 @@ turn "Off" "ReflectorLight"
 #turn "off" "Thrust"
 
 # -=New Functions, use with care=-
+#countBlocks "Drill"
+#countBlocks "MotorStator"
+#countBlocks "MotorRotor"
+
+# Deletes blocks, default action is to prompt with a value. If you use 'wipe "MotorStator" $true' instead it will delete without warning!
 #wipe "MotorStator"
 #wipe "MotorRotor"
+#wipe "SensorBlock"
 
-
+# We have a rule on the server that only allows 36 drills per grid. I automated this :)
+#checkMaxAllowed "Drill" 36
 
 #Commit changes
-saveIt
+#saveIt
