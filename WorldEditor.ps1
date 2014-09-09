@@ -8,23 +8,60 @@
     Delete things! (wipe Drill)
     Check for rule violations! (checkMaxAllowed Drill 36)
     Count things! (count Drill)
+    Find things near X Y Z! (findThingsNear 100 100 100 500)
+    Find things near Asteroids! (findThingsNearRoids 500) Thanks psycore!
 
-    USAGE:
-    Change the filePath below to suit.
+    INFO:
+    Without adjustment this script will not do anything!
+    I normally use it within the PowerShell ISE so I can hit play, issue commands directly, then saveIt
+
+    GENERAL USAGE:
+    First, change the filePath and configPath below to suit your server.
+    Whenever a block type is expected, the variable is the xsi:type in the save XML file but with the 'MyObjectBuilder_' removed.
+    Valid block values are all written in as examples in the ACTION section below and commented out
+
+    COMMAND USAGE:
+    Wipe Command. This deletes all of a given type of block in your map.
+    Syntax:    wipe [Block Type] [Confirm}
+    Example:   wipe MotorStator                         -Delete all Rotor bases, prompting for confirmation
+               wipe MotorRotor $true                    -Delete all Rotor tops, without prompt
+
+    Count Blocks Command. This counts all instances of a given Block Type.
+    Syntax:    countBlocks [Block type]
+    Example:   countBlocks Beacon                       -Count all beacons on your map, small and large ship
+               countBlocks RadioAntenna                 -Count all Antennas on your map, small and large ship
+
+    Check Max Allowed Command. This will check each Ship/Station for the given block, reporting if it is over the maximum and giving you the owners name of the first Drill.
+    Syntax:    checkMaxAllowed [Block Type] [Maximum Allowed]
+    Example:   checkMaxAllowed Drill 36                 -Return any ship/station with over 36 Drills, including player name
+               checkMaxAllowed LargeMissileTurret 10    -Return and ship/station with over 10 Missile Turrets, including player name
+
+    Turn On/Off Command. This turns on or off a given block type.
+    Syntax:    turn [on/off] [Block Type]
+    Example:   turn on InteriorLight                    -Turn on every InteriorLight in the world
+               turn off Assembler                       -Turn off every Assembler in the world
+
+    Finds Things Near Command. This will return any ship/station within the provided distance of the provided coordinates. Does NOT return asteroids.
+    Syntax:    findThingsNear [x coord] [y coord] [z coord] [search distance[
+    Example:   findThingsNear 0 0 0 1000                -Return any ship/station within 1000m of 0,0,0
+               findThingsNear -1000 1000 -1000 100      -Return any ship/station within 100m of -1000 1000 -1000
+
+    Find Things Near Roids Command. This will return any ship/station with the stated distance of all Asteroids. Thanks Psycore!
+                                    Note, This command does not take into account the asteroids size!
+    Syntax:    findThingsNearRoids [distance]
+    Example    findThingsNearRoids 100                   -Return any object within 100m of the zeropoint of all asteroids.
+               findThingsNearRoids 1000                  -Return any object within 1000m of the zeropoint of all asteroids.
+
+    Save it Command. This commits changes you have made to the save file.
+    Syntax:    saveIt
+    Example:   ....Really?!
+
+    AUTOMATED USAGE
+    Make sure you've change the filePath and configPath
     Scroll down the the section that says ACTIONS
-    You'll see a lot of 'turn "on" "thing!"' entries. Usage is fairly plain english, in that turn "on" and turn "off" will both work.
-    The third variable is the xsi:type in the save XML file but with the 'MyObjectBuilder_' removed.
-    Valid block values are all written in down below and commented out!
-    You need to uncomment saveIt at the end if you're modifying this for automated use
-
-    **Without adjustment this script will not do anything!**
-    
-    I actually use it within the PowerShell ISE so I can hit play, issue commands directly, then saveIt
-    
-    In order to make an action trigger, delete the # in front of the line, this is a powershell comment.
-    Don't delete the #'s in front of the -=Description=- lines tho, these are just for readability
-    To stop it doing something, just add the # back!
-    To turn on instead of off, change the "off" part to "on"
+    The # in front of the line denotes a powershell comment. Anything commented out will be ignored.
+    Add the commands you wish to perform in here as per the usage section above, there are lots of examples to get you started
+    Uncomment saveIt at the end of the Action section
 
     LICENSE/DISCLAIMER:
     It's mine. Adjust it if you want, don't claim it's yours.
@@ -44,34 +81,34 @@ Param(
 )
 
 function wipe {
-    $desc = $args[0]; $confirm = $args[1]; $wiped = 0
+    $desc = $args[0]; $confirm = $args[1]; $wiped = 0 #Set and Clear Variables
     $objects = $($mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $ns))
 
     if ($($objects.count) -gt 0) {
-        if ($confirm) {
+        if ($confirm -eq $true) {
             #Just delete, don't ask
             foreach ($object in $objects) { $object.ParentNode.removeChild($object) }
-            Write-Out "Confirm passed - Deleted $($objects.count) $desc items without prompt"
+            Write-Out "Confirm passed - Deleted $($objects.count) $desc items without prompt.`n"
         } else {
-            #Check
+            #Check first
             Write-Output "I have found $($objects.count) $desc items for deletion."
-            if ((Read-Host "Do you want to delete them? y/n").ToLower() -eq "y") {
+            if ((Read-Host "Do you want to delete them all? y/n").ToLower() -eq "y") {
                 foreach ($object in $objects) { $object.ParentNode.removeChild($object) }
             }
         }
     } else {
-        Write-Output "No $desc found"
+        Write-Output "No $desc found.`n"
     }
 }
 
 function countBlocks {
-    $desc = $args[0];
+    $desc = $args[0]; #Set and Clear Variables
     $objects = $($mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $ns))
-    Write-Output "You have $($objects.count) $desc in your world"
+    Write-Output "You have $($objects.count) $desc in your world.`n"
 }
 
 function checkMaxAllowed { #Work in Progress
-    $desc = $args[0]; $maxAllowed = $args[1]
+    $desc = $args[0]; $maxAllowed = $args[1]; $violations = 0 #Set and Clear Variables
     $cubeGrids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" ,$ns)
     foreach ($cubeGrid in $cubeGrids ){ # Scan thru Grids
         $blocks = $cubeGrid.SelectNodes("CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $ns)
@@ -79,12 +116,14 @@ function checkMaxAllowed { #Work in Progress
             #Get owner of first drill
             $culprit = $configXML.SelectSingleNode("//AllPlayers/PlayerItem[PlayerId='$($blocks[0].Owner)']", $ns)
             Write-Output "$($cubeGrid.DisplayName) has $($blocks.count) $desc. It belongs to $($culprit.Name)"
+            $violations++
         }
     }
+    Write-Output "Check complete, $violations violations found.`n"
 }
 
 function turn {
-    $desc = $args[1]; $onOff = $args[0] #Yeah, I know I could just use $args[x] thruout, but this is more readable. Deal.
+    $desc = $args[1]; $onOff = $args[0]  #Set and Clear Variables
     $changed = 0; $unchanged = 0; $onOff = $onOff.ToLower(); $count = 0
     $objects = $($mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $ns))
     
@@ -97,7 +136,7 @@ function turn {
             }
             $count++
         }
-        Write-Output "Turned $onOff $changed of your $count $desc, $unchanged were already $onOff."
+        Write-Output "Turned $onOff $changed of your $count $desc, $unchanged were already $onOff.`n"
     } elseif ($onOff -eq "off") {
         foreach ($object in $objects) {
             if ($object.Enabled -eq "true") {
@@ -107,14 +146,14 @@ function turn {
             }
             $count++
         }
-        Write-Output "Turned $onOff $changed of your $count $desc, $unchanged were already $onOff."
+        Write-Output "Turned $onOff $changed of your $count $desc, $unchanged were already $onOff.`n"
     } else {
-        Write-Output "Didn't understand action command for $desc"
+        Write-Output "Didn't understand action command for $desc`n"
     }
 }
 
 function findThingsNear {
-    $x = $args[0]; $y = $args[1]; $z = $args[2]; $dist = $args[3]; $count = 0
+    $x = $args[0]; $y = $args[1]; $z = $args[2]; $dist = $args[3]; $count = 0 #Set and Clear Variables
     $cubeGrids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" ,$ns)
     foreach ($cubeGrid in $cubeGrids) {
         #Just for readability sake, not really nessessary...
@@ -133,7 +172,20 @@ function findThingsNear {
             }
         }
     }
-    Write-Output "$count objects found in range."
+    Write-Output "$count objects found in range.`n"
+}
+
+function findThingsNearRoids {
+    $dist = $args[0] #Set and Clear Variables
+    $roids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_VoxelMap')]" ,$ns)
+    foreach ($roid in $roids) {
+        #Just for readability sake, not really nessessary...
+        [int]$roidX = $roid.PositionAndOrientation.Position.x
+        [int]$roidY = $roid.PositionAndOrientation.Position.y
+        [int]$roidZ = $roid.PositionAndOrientation.Position.z
+        Write-Output "Checking $($roid.Filename), range $dist"
+        findThingsNear $roidX $roidY $roidZ $dist
+    }
 }
 
 function saveIt {
@@ -141,21 +193,24 @@ function saveIt {
 }
 
 #Load files...
-Write-Output "Loading Map XML $mapPath... Please hold caller"
+Write-Output "Loading Map XML $mapPath... Please hold"
 $mapXML = $null #Ditch previous map 
 if ([xml]$mapXML = Get-Content $mapPath) {
-    Write-Output "Map loaded! Loading Config XML $mapPath... Please hold caller"
+    Write-Output "Map loaded! Loading Config XML $mapPath... Please hold"
     $configXML = $null #Ditch previous config 
     if ([xml]$configXML = Get-Content $configPath) {
-        Write-Output "Config loaded!"
+        Write-Output "Config loaded! Ready to work`n"
         $ns = New-Object System.Xml.XmlNamespaceManager($mapXML.NameTable)
         $ns.AddNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance")
 
 <#
- ===========
- = ACTIONS =
- ===========
+ ==================================
+ = BEGIN AUTOMATIC ACTION SECTION =
+ ==================================
+ Make your changes from here
 #>
+
+#I've left this section in as it lists most of the current block types
 
 # -=Lights=-
 #turn off ReflectorLight
@@ -195,7 +250,7 @@ if ([xml]$mapXML = Get-Content $mapPath) {
 #turn off Reactor
 #turn off BatteryBlock
 #turn off SolarPanel
-#turn off Door
+#turn on Door
 
 # -=Other Station Blocks=-
 #turn off GravityGenerator
@@ -213,23 +268,19 @@ if ([xml]$mapXML = Get-Content $mapPath) {
 #turn off VirtualMass
 #turn off Thrust
 
-# -=New Functions, use with care=-
-#countBlocks Drill
-#countBlocks MotorStator
-#countBlocks MotorRotor
+#Check the top section for more function Examples
 
-# Deletes blocks, default action is to prompt with a value. If you use 'wipe "MotorStator" $true' instead it will delete without warning!
-#wipe MotorStator
-#wipe MotorRotor
-#wipe SensorBlock
 
-# We have a rule on the server that only allows 36 drills per grid. I automated this :)
-#checkMaxAllowed Drill 36
-
-#Commit changes
+#Commit changes, uncomment this if you want changes to be saved when the script is run
 #saveIt
 
-#findThingsNear 0 0 0 1000 #(X, Y, Z, Distance) Find things within 1000 blocks of 0,0,0
+<#
+  ================================
+  = END AUTOMATED ACTION SECTION =
+  ================================
+  Make no changes past this point
+#>
+
 
     } else {
         Write-Output "Config Load failed :( Check your mapPath is correct? I attempted to load:"
