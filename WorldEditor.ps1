@@ -78,7 +78,7 @@ function checkMaxAllowed { #Work in Progress
         if ($($blocks.count) -gt $maxAllowed) { # Check for Violation
             #Get owner of first drill
             $culprit = $configXML.SelectSingleNode("//AllPlayers/PlayerItem[PlayerId='$($blocks[0].Owner)']", $ns)
-            Write-Output "EntityId $($cubeGrid.EntityID) has $($blocks.count) $desc. It belongs to $($culprit.Name)"
+            Write-Output "$($cubeGrid.DisplayName) has $($blocks.count) $desc. It belongs to $($culprit.Name)"
         }
     }
 }
@@ -113,14 +113,39 @@ function turn {
     }
 }
 
+function findThingsNear {
+    $x = $args[0]; $y = $args[1]; $z = $args[2]; $dist = $args[3]; $count = 0
+    $cubeGrids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" ,$ns)
+    foreach ($cubeGrid in $cubeGrids) {
+        #Just for readability sake, not really nessessary...
+        [int]$checkX = $cubeGrid.PositionAndOrientation.Position.x; $xLo = ($x - $dist); $xHi = ($dist + $x)
+        [int]$checkY = $cubeGrid.PositionAndOrientation.Position.y; $yLo = ($y - $dist); $yHi = ($dist + $y)
+        [int]$checkZ = $cubeGrid.PositionAndOrientation.Position.z; $zLo = ($z - $dist); $zHi = ($dist + $z)
+        if ($checkX -gt $xLo -and $checkX -lt $xHi) {
+            # X coord in range
+            if ($checkY -gt $yLo -and $checkY -lt $yHi) {
+                # Y coord in range
+                if ($checkZ -gt $zLo -and $checkZ -lt $zHi) {
+                    #Z coord in range - we have a winner!
+                    Write-Output "$($cubeGrid.DisplayName), (X$checkX, Y$checkY, Z$checkZ) is in range"
+                    $count++
+                }
+            }
+        }
+    }
+    Write-Output "$count objects found in range."
+}
+
 function saveIt {
     $mapXML.Save($mapPath)
 }
 
 #Load files...
 Write-Output "Loading Map XML $mapPath... Please hold caller"
+$mapXML = $null #Ditch previous map 
 if ([xml]$mapXML = Get-Content $mapPath) {
     Write-Output "Map loaded! Loading Config XML $mapPath... Please hold caller"
+    $configXML = $null #Ditch previous config 
     if ([xml]$configXML = Get-Content $configPath) {
         Write-Output "Config loaded!"
         $ns = New-Object System.Xml.XmlNamespaceManager($mapXML.NameTable)
@@ -203,6 +228,8 @@ if ([xml]$mapXML = Get-Content $mapPath) {
 
 #Commit changes
 #saveIt
+
+#findThingsNear 0 0 0 1000 #(X, Y, Z, Distance) Find things within 1000 blocks of 0,0,0
 
     } else {
         Write-Output "Config Load failed :( Check your mapPath is correct? I attempted to load:"
