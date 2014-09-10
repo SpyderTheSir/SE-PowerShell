@@ -76,8 +76,9 @@
 
 Param(
     # This is the default location if you're running as local/console as the 'Administrator' user. Not the best example.
-  [string]$mapPath = "C:\Users\Administrator\AppData\Roaming\SpaceEngineersDedicated\Saves\Map\SANDBOX_0_0_0_.sbs",          #SANDBOX_0_0_0_.sbs map file
-  [string]$configPath = "C:\Users\Administrator\AppData\Roaming\SpaceEngineersDedicated\Saves\Map\Sandbox.sbc"               #Sandbox.sbc config file
+    [string]$saveLocation = "C:\Temp"
+  #[string]$mapPath = "C:\Users\Administrator\AppData\Roaming\SpaceEngineersDedicated\Saves\Map\SANDBOX_0_0_0_.sbs",          #SANDBOX_0_0_0_.sbs map file
+  #[string]$configPath = "C:\Users\Administrator\AppData\Roaming\SpaceEngineersDedicated\Saves\Map\Sandbox.sbc"               #Sandbox.sbc config file
 )
 
 function wipe {
@@ -88,7 +89,7 @@ function wipe {
         if ($confirm -eq $true) {
             #Just delete, don't ask
             foreach ($object in $objects) { $object.ParentNode.removeChild($object) }
-            Write-Out "Confirm passed - Deleted $($objects.count) $desc items without prompt.`n"
+            Write-Output "Confirm passed - Deleted $($objects.count) $desc items without prompt.`n"
         } else {
             #Check first
             Write-Output "I have found $($objects.count) $desc items for deletion."
@@ -193,12 +194,12 @@ function saveIt {
 }
 
 #Load files...
-Write-Output "Loading Map XML $mapPath... Please hold"
+Write-Output "Loading Map XML from $saveLocation... Please hold"
 $mapXML = $null #Ditch previous map 
-if ([xml]$mapXML = Get-Content $mapPath) {
-    Write-Output "Map loaded! Loading Config XML $mapPath... Please hold"
+if ([xml]$mapXML = Get-Content $saveLocation\SANDBOX_0_0_0_.sbs) {
+    Write-Output "Map loaded! Loading Config XML from $saveLocation... Please hold"
     $configXML = $null #Ditch previous config 
-    if ([xml]$configXML = Get-Content $configPath) {
+    if ([xml]$configXML = Get-Content $saveLocation\Sandbox.sbc) {
         Write-Output "Config loaded! Ready to work`n"
         $ns = New-Object System.Xml.XmlNamespaceManager($mapXML.NameTable)
         $ns.AddNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance")
