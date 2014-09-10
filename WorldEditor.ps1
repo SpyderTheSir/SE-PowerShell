@@ -16,7 +16,7 @@
     I normally use it within the PowerShell ISE so I can hit play, issue commands directly, then saveIt
 
     GENERAL USAGE:
-    First, change the filePath and configPath below to suit your server.
+    First, change the saveLocation below this comment block to suit your server's save path.
     Whenever a block type is expected, the variable is the xsi:type in the save XML file but with the 'MyObjectBuilder_' removed.
     Valid block values are all written in as examples in the ACTION section below and commented out
 
@@ -75,10 +75,8 @@
 #>
 
 Param(
-    # This is the default location if you're running as local/console as the 'Administrator' user. Not the best example.
-    [string]$saveLocation = "C:\Temp"
-  #[string]$mapPath = "C:\Users\Administrator\AppData\Roaming\SpaceEngineersDedicated\Saves\Map\SANDBOX_0_0_0_.sbs",          #SANDBOX_0_0_0_.sbs map file
-  #[string]$configPath = "C:\Users\Administrator\AppData\Roaming\SpaceEngineersDedicated\Saves\Map\Sandbox.sbc"               #Sandbox.sbc config file
+    # I've changed how this works. Now you just need to point it to your entire save folder. It is assumed that all you .vox, .sbc and .sbs files are in here
+    [string]$saveLocation = "C:\Users\Administrator\AppData\Roaming\SpaceEngineersDedicated\Saves\Map" #Default location, running as local console on Server 2012 R2 as admin
 )
 
 function wipe {
