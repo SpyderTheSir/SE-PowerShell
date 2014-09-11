@@ -282,10 +282,10 @@ if ([xml]$mapXML = Get-Content $saveLocation\SANDBOX_0_0_0_.sbs) {
 
 
     } else {
-        Write-Output "Config Load failed :( Check your mapPath is correct? I attempted to load:"
-        Write-Output $configPath
+        Write-Output "Config Load failed :( Check your saveLocation is correct? I attempted to load:"
+        Write-Output "$saveLocation\Sandbox.sbc"
     }
 } else {
-    Write-Output "Map Load failed :( Check your configPath is correct? I attempted to load:"
-    Write-Output $mapPath
+    Write-Output "Map Load failed :( Check your saveLocation is correct? I attempted to load:"
+    Write-Output "$saveLocation\SANDBOX_0_0_0_.sbs"
 }
