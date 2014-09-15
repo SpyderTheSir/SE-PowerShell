@@ -76,7 +76,7 @@
 
 Param(
     # I've changed how this works. Now you just need to point it to your entire save folder. It is assumed that all you .vox, .sbc and .sbs files are in here
-    [string]$saveLocation = "C:\Users\Administrator\AppData\Roaming\SpaceEngineersDedicated\Saves\Map" #Default location, running as local console on Server 2012 R2 as admin
+    [string]$saveLocation = "C:\ProgramData\SpaceEngineersDedicated\Moons of Jupiter\Saves\Map" #Default location, running as local console on Server 2012 R2 as admin
 )
 
 function wipe {
@@ -187,8 +187,30 @@ function findThingsNearRoids {
     }
 }
 
+function removeFloaters { #Do not use this command yet, it's incomplete
+    $flush = $args[0] #Set and Clear Variables
+    $floaters = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_FloatingObject')]" ,$ns)
+    if ($($floaters.count) -gt 0) {
+        if ($flush -eq $true) {
+            #Just delete, don't ask
+            foreach ($floater in $floaters) { $floater.ParentNode.removeChild($floater) }
+            Write-Output "Confirm passed - Deleted $($floaters.count) $desc items without prompt.`n"
+        } else {
+            #Check first
+            Write-Output "I have found $($floaters.count) $desc items for deletion."
+            if ((Read-Host "Do you want to delete them all? y/n").ToLower() -eq "y") {
+                foreach ($floater in $floaters) { $floaters.ParentNode.removeChild($floater) }
+            }
+        }
+    } else {
+        Write-Output "No Floaters found.`n"
+    }
+
+}
+
 function saveIt {
-    $mapXML.Save($mapPath)
+    $saveFile = "$saveLocation\SANDBOX_0_0_0_.sbs"
+    $mapXML.Save($saveFile)
 }
 
 #Load files...
