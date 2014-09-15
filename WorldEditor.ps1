@@ -76,7 +76,7 @@
 
 Param(
     # I've changed how this works. Now you just need to point it to your entire save folder. It is assumed that all you .vox, .sbc and .sbs files are in here
-    [string]$saveLocation = "C:\ProgramData\SpaceEngineersDedicated\Moons of Jupiter\Saves\Map"
+    [string]$saveLocation = "C:\Users\Administrator.MEDIABOX\AppData\Roaming\SpaceEngineersDedicated\Saves\Map"
 )
 
 function wipe {
