@@ -41,7 +41,7 @@
     Example:   turn on InteriorLight                    -Turn on every InteriorLight in the world
                turn off Assembler                       -Turn off every Assembler in the world
 
-    Finds Things Near Command. This will return any ship/station within the provided distance of the provided coordinates. Does NOT return asteroids.
+    Finds Things Near Command. This will return the XML object of any ship/station within the provided distance of the provided coordinates. Does NOT return asteroids.
     Syntax:    findThingsNear [x coord] [y coord] [z coord] [search distance[
     Example:   findThingsNear 0 0 0 1000                -Return any ship/station within 1000m of 0,0,0
                findThingsNear -1000 1000 -1000 100      -Return any ship/station within 100m of -1000 1000 -1000
@@ -76,7 +76,8 @@
 
 Param(
     # I've changed how this works. Now you just need to point it to your entire save folder. It is assumed that all you .vox, .sbc and .sbs files are in here
-    [string]$saveLocation = "C:\Users\Administrator.MEDIABOX\AppData\Roaming\SpaceEngineersDedicated\Saves\Map"
+    [string]$saveLocation = "$env:APPDATA\SpaceEngineersDedicated\Saves\Map",
+    [string]$origLocation = "E:\Backups\SEDS\Originals"
 )
 
 function wipe {
@@ -152,7 +153,7 @@ function turn {
 }
 
 function findThingsNear {
-    $x = $args[0]; $y = $args[1]; $z = $args[2]; $dist = $args[3]; $count = 0 #Set and Clear Variables
+    $x = $args[0]; $y = $args[1]; $z = $args[2]; $dist = $args[3] #Set and Clear Variables
     $cubeGrids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" ,$ns)
     foreach ($cubeGrid in $cubeGrids) {
         #Just for readability sake, not really nessessary...
@@ -165,25 +166,49 @@ function findThingsNear {
                 # Y coord in range
                 if ($checkZ -gt $zLo -and $checkZ -lt $zHi) {
                     #Z coord in range - we have a winner!
-                    Write-Output "$($cubeGrid.DisplayName), (X$checkX, Y$checkY, Z$checkZ) is in range"
-                    $count++
+                    $cubeGrid
                 }
             }
         }
     }
-    Write-Output "$count objects found in range.`n"
 }
 
 function findThingsNearRoids {
-    $dist = $args[0] #Set and Clear Variables
     $roids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_VoxelMap')]" ,$ns)
     foreach ($roid in $roids) {
-        #Just for readability sake, not really nessessary...
-        [int]$roidX = $roid.PositionAndOrientation.Position.x
-        [int]$roidY = $roid.PositionAndOrientation.Position.y
-        [int]$roidZ = $roid.PositionAndOrientation.Position.z
-        Write-Output "Checking $($roid.Filename), range $dist"
-        findThingsNear $roidX $roidY $roidZ $dist
+        $response = findThingsNear $roid.PositionAndOrientation.Position.x $roid.PositionAndOrientation.Position.y $roid.PositionAndOrientation.Position.z $args[0]
+        if ($($response.count) -eq 0) {
+            "Nothing found near $($roid.Filename)`n"
+        } else {
+            "Things found near $($roid.Filename), listing:"
+            foreach ($r in $response) {
+                Write-Output "$($r.DisplayName) found at X:$($r.PositionAndOrientation.Position.x) Y:$($r.PositionAndOrientation.Position.y) Z:$($r.PositionAndOrientation.Position.z)"
+            }
+            ""
+        }
+    }
+}
+
+function refreshRoids {
+    $dist = $args[0] #Set and Clear Variables
+    if ($dist -gt 0) {
+        $roids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_VoxelMap')]" ,$ns)
+        foreach ($roid in $roids) {
+            $response = findThingsNear $roid.PositionAndOrientation.Position.x $roid.PositionAndOrientation.Position.y $roid.PositionAndOrientation.Position.z $args[0]
+            if ($($response.count) -eq 0) {
+                "Nothing found near $($roid.Filename)"
+                $removeRoid = "$saveLocation\$($roid.Filename)"
+                $originalRoid = "$origLocation\$($roid.Filename)"
+                if (Test-Path $originalRoid) {
+                    "Replacing Roid $($roid.filename) with Original"
+                    Copy-Item $originalRoid $removeRoid -Force
+                }
+            } else {
+                "Blocking structures found, skipped $($roid.Filename)"
+            }
+        }
+    } else {
+        "Distance is required!"
     }
 }
 
