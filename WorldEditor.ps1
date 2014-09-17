@@ -107,7 +107,7 @@ function countBlocks {
     Write-Output "You have $($objects.count) $desc in your world.`n"
 }
 
-function checkMaxAllowed { #Work in Progress
+function checkMaxAllowed {
     $desc = $args[0]; $maxAllowed = $args[1]; $violations = 0 #Set and Clear Variables
     $cubeGrids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" ,$ns)
     foreach ($cubeGrid in $cubeGrids ){ # Scan thru Grids
@@ -212,7 +212,7 @@ function refreshRoids {
     }
 }
 
-function removeFloaters { #Do not use this command yet, it's incomplete
+function removeFloaters {
     $flush = $args[0] #Set and Clear Variables
     $floaters = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_FloatingObject')]" ,$ns)
     if ($($floaters.count) -gt 0) {
@@ -224,7 +224,7 @@ function removeFloaters { #Do not use this command yet, it's incomplete
             #Check first
             Write-Output "I have found $($floaters.count) $desc items for deletion."
             if ((Read-Host "Do you want to delete them all? y/n").ToLower() -eq "y") {
-                foreach ($floater in $floaters) { $floaters.ParentNode.removeChild($floater) }
+                foreach ($floater in $floaters) { $floater.ParentNode.removeChild($floater) }
             }
         }
     } else {
