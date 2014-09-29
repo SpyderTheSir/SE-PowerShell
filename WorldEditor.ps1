@@ -1,4 +1,4 @@
-<#
+﻿<#
 
     Spyder's Space Engineers World Editor Script
     ============================================
@@ -75,7 +75,7 @@
 #>
 
 Param(
-    # I've changed how this works. Now you just need to point it to your entire save folder. It is assumed that all you .vox, .sbc and .sbs files are in here
+    # I've changed how this works. Now you just need to point it to your entire save folder. It is assumed that all your .vox, .sbc and .sbs files are in here
     [string]$saveLocation = "$env:APPDATA\SpaceEngineersDedicated\Saves\Map",
     [string]$origLocation = "E:\Backups\SEDS\Originals"
 )
@@ -233,6 +233,44 @@ function removeFloaters {
 
 }
 
+function removeJunk {
+    $command = $args[0].ToLower(); $action = $args[1].ToLower() #Set and Clear Variables
+    $cubeGrids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" ,$ns)
+    if ($($cubeGrids.count) -gt 0) {
+        foreach ($cubeGrid in $cubeGrids) {
+            #Select all Beacons, Antennas, PistonTops and MotorRotors (Rotor Tops)
+            $blocksOfInterest = $cubeGrid.SelectNodes("CubeBlocks/MyObjectBuilder_CubeBlock[(@xsi:type='MyObjectBuilder_Beacon') or (@xsi:type='MyObjectBuilder_RadioAntenna') or (@xsi:type='MyObjectBuilder_MotorRotor') or (@xsi:type='MyObjectBuilder_PistonTop')]", $ns)
+            if ($blocksOfInterest.count -gt 0) {
+                #This cubegrid passed tests
+                if ($command -eq "list" -and ($action -eq "all" -or $action -eq "good")) {
+                    Write-Output "$($cubeGrid.DisplayName) has a Beacon/Antenna (Or Rotor/Piston Top)"
+                }
+            } else {
+                #This cubegrid failed tests
+                if ($command -eq "delete") {
+                    if ($action -eq "noconfirm") {
+                        Write-Output "Confirm passed - Deleted $($cubeGrid.DisplayName) without prompt.`n"
+                        $cubeGrid.ParentNode.removeChild($cubeGrid)
+                    } else {
+                        # Assume confirmation required
+                        if ((Read-Host "$($cubeGrid.DisplayName) has no Beacon/Antenna (Or Rotor/Piston Top) - Do you want to delete it? y/n").ToLower() -eq "y") {
+                            $cubeGrid.ParentNode.removeChild($cubeGrid)
+                        }
+                    }
+                } elseif ($command -eq "list" -and ($action -eq "all" -or $action -eq "bad")) {
+                    # Default Command - 'list bad'
+                    Write-Output "X: $($cubeGrid.DisplayName) has no Beacon/Antenna (Or Rotor/Piston Top)"
+                } else {
+                    Write-Host "Command not recognised"
+                }
+            }
+        }
+    } else {
+        Write-Output "No CubeGrids found in map.`n"
+    }
+
+}
+
 function saveIt {
     $saveFile = "$saveLocation\SANDBOX_0_0_0_.sbs"
     $mapXML.Save($saveFile)
@@ -316,6 +354,8 @@ if ([xml]$mapXML = Get-Content $saveLocation\SANDBOX_0_0_0_.sbs) {
 
 #Check the top section for more function Examples
 
+#removeJunk
+#removeFloaters $true
 
 #Commit changes, uncomment this if you want changes to be saved when the script is run
 #saveIt
