@@ -82,7 +82,7 @@ Param(
 
 function wipe {
     $desc = $args[0]; $confirm = $args[1]; $wiped = 0 #Set and Clear Variables
-    $objects = $($mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $ns))
+    $objects = $($mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $mapNS))
 
     if ($($objects.count) -gt 0) {
         if ($confirm -eq $true) {
@@ -103,18 +103,18 @@ function wipe {
 
 function countBlocks {
     $desc = $args[0]; #Set and Clear Variables
-    $objects = $($mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $ns))
+    $objects = $($mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $mapNS))
     Write-Output "You have $($objects.count) $desc in your world.`n"
 }
 
 function checkMaxAllowed {
     $desc = $args[0]; $maxAllowed = $args[1]; $violations = 0 #Set and Clear Variables
-    $cubeGrids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" ,$ns)
+    $cubeGrids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" ,$mapNS)
     foreach ($cubeGrid in $cubeGrids ){ # Scan thru Grids
-        $blocks = $cubeGrid.SelectNodes("CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $ns)
+        $blocks = $cubeGrid.SelectNodes("CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $mapNS)
         if ($($blocks.count) -gt $maxAllowed) { # Check for Violation
             #Get owner of first drill
-            $culprit = $configXML.SelectSingleNode("//AllPlayers/PlayerItem[PlayerId='$($blocks[0].Owner)']", $ns)
+            $culprit = $configXML.SelectSingleNode("//AllPlayers/PlayerItem[PlayerId='$($blocks[0].Owner)']", $confNS)
             Write-Output "$($cubeGrid.DisplayName) has $($blocks.count) $desc. It belongs to $($culprit.Name)"
             $violations++
         }
@@ -125,7 +125,7 @@ function checkMaxAllowed {
 function turn {
     $desc = $args[1]; $onOff = $args[0]  #Set and Clear Variables
     $changed = 0; $unchanged = 0; $onOff = $onOff.ToLower(); $count = 0
-    $objects = $($mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $ns))
+    $objects = $($mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $mapNS))
     
     if ($onOff -eq "on") {
         foreach ($object in $objects) {
@@ -154,7 +154,7 @@ function turn {
 
 function findThingsNear {
     $x = $args[0]; $y = $args[1]; $z = $args[2]; $dist = $args[3] #Set and Clear Variables
-    $cubeGrids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" ,$ns)
+    $cubeGrids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" ,$mapNS)
     foreach ($cubeGrid in $cubeGrids) {
         #Just for readability sake, not really nessessary...
         [int]$checkX = $cubeGrid.PositionAndOrientation.Position.x; $xLo = ($x - $dist); $xHi = ($dist + $x)
@@ -174,7 +174,7 @@ function findThingsNear {
 }
 
 function findThingsNearRoids {
-    $roids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_VoxelMap')]" ,$ns)
+    $roids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_VoxelMap')]" ,$mapNS)
     foreach ($roid in $roids) {
         $response = findThingsNear $roid.PositionAndOrientation.Position.x $roid.PositionAndOrientation.Position.y $roid.PositionAndOrientation.Position.z $args[0]
         if ($($response.count) -eq 0) {
@@ -191,7 +191,7 @@ function findThingsNearRoids {
 function refreshRoids {
     $dist = $args[0] #Set and Clear Variables
     if ($dist -gt 0) {
-        $roids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_VoxelMap')]" ,$ns)
+        $roids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_VoxelMap')]" ,$mapNS)
         foreach ($roid in $roids) {
             $response = findThingsNear $roid.PositionAndOrientation.Position.x $roid.PositionAndOrientation.Position.y $roid.PositionAndOrientation.Position.z $args[0]
             if ($($response.count) -eq 0) {
@@ -213,7 +213,7 @@ function refreshRoids {
 
 function removeFloaters {
     $flush = $args[0] #Set and Clear Variables
-    $floaters = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_FloatingObject')]" ,$ns)
+    $floaters = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_FloatingObject')]" ,$mapNS)
     if ($($floaters.count) -gt 0) {
         if ($flush -eq $true) {
             #Just delete, don't ask
@@ -234,19 +234,15 @@ function removeFloaters {
 
 function removeJunk {
     $command = $args[0].ToLower(); $action = $args[1].ToLower() #Set and Clear Variables
-    $cubeGrids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" ,$ns)
+    $cubeGrids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" ,$mapNS)
     if ($($cubeGrids.count) -gt 0) {
         foreach ($cubeGrid in $cubeGrids) {
             #Select all Beacons, Antennas, PistonTops and MotorRotors (Rotor Tops)
-            $blocksOfInterest = $cubeGrid.SelectNodes("CubeBlocks/MyObjectBuilder_CubeBlock[(@xsi:type='MyObjectBuilder_Beacon') or (@xsi:type='MyObjectBuilder_RadioAntenna') or (@xsi:type='MyObjectBuilder_MotorRotor') or (@xsi:type='MyObjectBuilder_PistonTop')]", $ns)
+            $blocksOfInterest = $cubeGrid.SelectNodes("CubeBlocks/MyObjectBuilder_CubeBlock[(@xsi:type='MyObjectBuilder_Beacon') or (@xsi:type='MyObjectBuilder_RadioAntenna') or (@xsi:type='MyObjectBuilder_MotorRotor') or (@xsi:type='MyObjectBuilder_PistonTop')]", $mapNS)
             if ($blocksOfInterest.count -gt 0) {
                 #This cubegrid passed tests
                 if ($command -eq "list" -and ($action -eq "all" -or $action -eq "good")) {
-<<<<<<< HEAD
                     Write-Output "$($cubeGrid.DisplayName) has a Beacon/Antenna (Or Rotor/Piston Top)"
-=======
-                    Write-Output "✓: $($cubeGrid.DisplayName) has a Beacon/Antenna (Or Rotor/Piston Top)"
->>>>>>> origin/dev
                 }
             } else {
                 #This cubegrid failed tests
@@ -256,17 +252,13 @@ function removeJunk {
                         $cubeGrid.ParentNode.removeChild($cubeGrid)
                     } else {
                         # Assume confirmation required
-<<<<<<< HEAD
                         if ((Read-Host "$($cubeGrid.DisplayName) has no Beacon/Antenna (Or Rotor/Piston Top) - Do you want to delete it? y/n").ToLower() -eq "y") {
-=======
-                        if ((Read-Host "X: $($cubeGrid.DisplayName) has no Beacon/Antenna (Or Rotor/Piston Top) - Do you want to delete it? y/n").ToLower() -eq "y") {
->>>>>>> origin/dev
                             $cubeGrid.ParentNode.removeChild($cubeGrid)
                         }
                     }
                 } elseif ($command -eq "list" -and ($action -eq "all" -or $action -eq "bad")) {
                     # Default Command - 'list bad'
-                    Write-Output "X: $($cubeGrid.DisplayName) has no Beacon/Antenna (Or Rotor/Piston Top)"
+                    Write-Output "$($cubeGrid.DisplayName) has no Beacon/Antenna (Or Rotor/Piston Top)"
                 } else {
                     Write-Host "Command not recognised"
                 }
@@ -287,12 +279,14 @@ function saveIt {
 Write-Output "Loading Map XML from $saveLocation... Please hold"
 $mapXML = $null #Ditch previous map 
 if ([xml]$mapXML = Get-Content $saveLocation\SANDBOX_0_0_0_.sbs) {
+    $mapNS = New-Object System.Xml.XmlNamespaceManager($mapXML.NameTable)
+    $mapNS.AddNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance")
     Write-Output "Map loaded! Loading Config XML from $saveLocation... Please hold"
     $configXML = $null #Ditch previous config 
     if ([xml]$configXML = Get-Content $saveLocation\Sandbox.sbc) {
+        $confNS = New-Object System.Xml.XmlNamespaceManager($configXML.NameTable)
+        $confNS.AddNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance")
         Write-Output "Config loaded! Ready to work`n"
-        $ns = New-Object System.Xml.XmlNamespaceManager($mapXML.NameTable)
-        $ns.AddNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance")
 
 <#
  ==================================
@@ -362,7 +356,10 @@ if ([xml]$mapXML = Get-Content $saveLocation\SANDBOX_0_0_0_.sbs) {
 #Check the top section for more function Examples
 
 #removeJunk
-#removeFloaters $true
+removeFloaters $true
+
+turn off Assembler
+turn off Refinery
 
 #Commit changes, uncomment this if you want changes to be saved when the script is run
 #saveIt
