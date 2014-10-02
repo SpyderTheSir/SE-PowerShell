@@ -184,7 +184,6 @@ function findThingsNearRoids {
             foreach ($r in $response) {
                 Write-Output "$($r.DisplayName) found at X:$($r.PositionAndOrientation.Position.x) Y:$($r.PositionAndOrientation.Position.y) Z:$($r.PositionAndOrientation.Position.z)"
             }
-            ""
         }
     }
 }
