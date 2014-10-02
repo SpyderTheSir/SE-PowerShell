@@ -184,7 +184,6 @@ function findThingsNearRoids {
             foreach ($r in $response) {
                 Write-Output "$($r.DisplayName) found at X:$($r.PositionAndOrientation.Position.x) Y:$($r.PositionAndOrientation.Position.y) Z:$($r.PositionAndOrientation.Position.z)"
             }
-            ""
         }
     }
 }
@@ -243,7 +242,11 @@ function removeJunk {
             if ($blocksOfInterest.count -gt 0) {
                 #This cubegrid passed tests
                 if ($command -eq "list" -and ($action -eq "all" -or $action -eq "good")) {
+<<<<<<< HEAD
                     Write-Output "$($cubeGrid.DisplayName) has a Beacon/Antenna (Or Rotor/Piston Top)"
+=======
+                    Write-Output "✓: $($cubeGrid.DisplayName) has a Beacon/Antenna (Or Rotor/Piston Top)"
+>>>>>>> origin/dev
                 }
             } else {
                 #This cubegrid failed tests
@@ -253,7 +256,11 @@ function removeJunk {
                         $cubeGrid.ParentNode.removeChild($cubeGrid)
                     } else {
                         # Assume confirmation required
+<<<<<<< HEAD
                         if ((Read-Host "$($cubeGrid.DisplayName) has no Beacon/Antenna (Or Rotor/Piston Top) - Do you want to delete it? y/n").ToLower() -eq "y") {
+=======
+                        if ((Read-Host "X: $($cubeGrid.DisplayName) has no Beacon/Antenna (Or Rotor/Piston Top) - Do you want to delete it? y/n").ToLower() -eq "y") {
+>>>>>>> origin/dev
                             $cubeGrid.ParentNode.removeChild($cubeGrid)
                         }
                     }
