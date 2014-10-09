@@ -86,14 +86,14 @@ function wipe {
 
     if ($($objects.count) -gt 0) {
         if ($confirm -eq $true) {
-            #Just delete, don't ask
-            foreach ($object in $objects) { $object.ParentNode.removeChild($object) }
+            # Just delete, don't ask
+            foreach ($object in $objects) { $object.ParentNode.removeChild($object) | Out-Null } # Coz nobody CARES!
             Write-Output "Confirm passed - Deleted $($objects.count) $desc items without prompt.`n"
         } else {
-            #Check first
+            # Check first
             Write-Output "I have found $($objects.count) $desc items for deletion."
             if ((Read-Host "Do you want to delete them all? y/n").ToLower() -eq "y") {
-                foreach ($object in $objects) { $object.ParentNode.removeChild($object) }
+                foreach ($object in $objects) { $object.ParentNode.removeChild($object) | Out-Null } # Coz nobody CARES!
             }
         }
     } else {
@@ -123,7 +123,7 @@ function checkMaxAllowed {
 }
 
 function turn {
-    $desc = $args[1]; $onOff = $args[0]  #Set and Clear Variables
+    $desc = $args[1] ; $onOff = $args[0]  #Set and Clear Variables
     $changed = 0; $unchanged = 0; $onOff = $onOff.ToLower(); $count = 0
     $objects = $($mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $mapNS))
     
@@ -355,11 +355,8 @@ if ([xml]$mapXML = Get-Content $saveLocation\SANDBOX_0_0_0_.sbs) {
 
 #Check the top section for more function Examples
 
-#removeJunk
-removeFloaters $true
+#removeFloaters $true
 
-turn off Assembler
-turn off Refinery
 
 #Commit changes, uncomment this if you want changes to be saved when the script is run
 #saveIt
