@@ -52,6 +52,24 @@
     Example    findThingsNearRoids 100                   -Return any object within 100m of the zeropoint of all asteroids.
                findThingsNearRoids 1000                  -Return any object within 1000m of the zeropoint of all asteroids.
 
+    Remove Junk Command. This will remove any cubegrids of any size that doesn't have a Beacon, Antenna, Piston Top, Rotor Top or Wheel (Piston Tops, Rotor Tops and wheels are seperate grids)
+    Syntax:    removeJunk [command] [action]
+    Example:   removeJunk list bad                       -Return a list of all cubegrids that will fail tests
+               removeJunk list good                      -Return a list of all cubegrids that will pass tests
+               removeJunk delete                         -Go thru each failed cubegrids and prompt for deletion
+               removeJunk delete noconfirm               -Delete all failed cubegrids (Use with care, no prompts)
+
+    Remove Floaters Command. This will remove all floating objects
+    Syntax:    removeFloaters [confirm]
+    Example:   removeFloaters $true                      -Removes all floating objects without prompt
+    Example:   removeFloaters                            -Counts all floating objects and prompts for removal
+
+    Refresh Roids command. This will replace the .vox files of asteroids that do not have items within the stated distance all all asteroids.
+                                    Note, This command does not take into account the asteroids size!
+                                    Note2, Make sure you have the backup roids saved in the folder specified below as $origLocation
+    Syntax:    refreshRoids [distance]
+    Example:   refreshRoids 500                          -Replaces all the asteroids that do not have anything within 500m of them
+
     Save it Command. This commits changes you have made to the save file.
     Syntax:    saveIt
     Example:   ....Really?!
@@ -68,105 +86,137 @@
     If it breaks your save file, you should have made a backup :)
 
     Caveats!
-    - Tested on Windows 8.1 and Server 2012 ONLY
-    - Error reporting and change logging is minim... non existent.
     - Backup your stuff!
+    - Tested on Windows 8.1 and Server 2012 ONLY
+    - Error reporting is minimal, but improving.
+    - Backup your stuff!!
 
 #>
 
 Param(
-    # I've changed how this works. Now you just need to point it to your entire save folder. It is assumed that all your .vox, .sbc and .sbs files are in here
-    [string]$saveLocation = "C:\temp", #"$env:APPDATA\SpaceEngineersDedicated\Saves\Map",
-    [string]$origLocation = "E:\Backups\SEDS\Originals"
+    # I've changed how this works. Now you just need to point it to your entire save folder. It is assumed that all your .vx2, .sbc and .sbs files are in here
+    [string]$saveLocation = "$env:APPDATA\SpaceEngineersDedicated\Saves\Map",
+    [string]$origLocation = "$env:APPDATA\SpaceEngineersDedicated\Backups\Map\"
 )
 
 function wipe {
     $desc = $args[0]; $confirm = $args[1]; $wiped = 0 #Set and Clear Variables
-    $objects = $($mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $mapNS))
-
-    if ($($objects.count) -gt 0) {
-        if ($confirm -eq $true) {
-            # Just delete, don't ask
-            foreach ($object in $objects) { $object.ParentNode.removeChild($object) | Out-Null } # Coz nobody CARES!
-            Write-Output "Confirm passed - Deleted $($objects.count) $desc items without prompt.`n"
-        } else {
-            # Check first
-            Write-Output "I have found $($objects.count) $desc items for deletion."
-            if ((Read-Host "Do you want to delete them all? y/n").ToLower() -eq "y") {
-                foreach ($object in $objects) { $object.ParentNode.removeChild($object) | Out-Null } # Coz nobody CARES!
-            }
-        }
+    if ($desc -eq $null) {
+        Write-Output "No Block type passed to wipe command.."
     } else {
-        Write-Output "No $desc found.`n"
+        $objects = $($mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $mapNS))
+
+        if ($($objects.count) -gt 0) {
+            if ($confirm -eq $true) {
+                # Just delete, don't ask
+                foreach ($object in $objects) { $object.ParentNode.removeChild($object) | Out-Null } # Coz nobody CARES!
+                Write-Output "Confirm passed - Deleted $($objects.count) $desc items without prompt.`n"
+            } else {
+                # Check first
+                Write-Output "I have found $($objects.count) $desc items for deletion."
+                if ((Read-Host "Do you want to delete them all? y/n").ToLower() -eq "y") {
+                    foreach ($object in $objects) { $object.ParentNode.removeChild($object) | Out-Null } # Coz nobody CARES!
+                }
+            }
+        } else {
+            Write-Output "No $desc found.`n"
+        }
     }
 }
 
 function countBlocks {
     $desc = $args[0]; #Set and Clear Variables
-    $objects = $($mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $mapNS))
-    Write-Output "You have $($objects.count) $desc in your world.`n"
+    if ($desc -eq $null) {
+        Write-Output "No Block type passed to countBlocks command.."
+    } else {
+        $objects = $($mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $mapNS))
+        Write-Output "You have $($objects.count) $desc in your world.`n"
+    }
 }
 
 function checkMaxAllowed {
     $desc = $args[0]; $maxAllowed = $args[1]; $violations = 0 #Set and Clear Variables
-    $cubeGrids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" ,$mapNS)
-    foreach ($cubeGrid in $cubeGrids ){ # Scan thru Grids
-        $blocks = $cubeGrid.SelectNodes("CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $mapNS)
-        if ($($blocks.count) -gt $maxAllowed) { # Check for Violation
-            #Get owner of first drill
-            $culprit = $configXML.SelectSingleNode("//AllPlayers/PlayerItem[PlayerId='$($blocks[0].Owner)']", $confNS)
-            Write-Output "$($cubeGrid.DisplayName) has $($blocks.count) $desc. It belongs to $($culprit.Name)"
-            $violations++
+    if ($desc -eq $null) {
+        Write-Output "No Block type passed to checkMaxAllowed command.."
+    } elseif ($maxAllowed -eq $null) {
+        Write-Output "No Max Allowed passed to checkMaxAllowed command.."
+    } else {
+        $cubeGrids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" ,$mapNS)
+        foreach ($cubeGrid in $cubeGrids ){ # Scan thru Grids
+            $blocks = $cubeGrid.SelectNodes("CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $mapNS)
+            if ($($blocks.count) -gt $maxAllowed) { # Check for Violation
+                #Get owner of first drill
+                $culprit = $configXML.SelectSingleNode("//AllPlayers/PlayerItem[PlayerId='$($blocks[0].Owner)']", $confNS)
+                Write-Output "$($cubeGrid.DisplayName) has $($blocks.count) $desc. It belongs to $($culprit.Name)"
+                $violations++
+            }
         }
+        Write-Output "Check complete, $violations violations found.`n"
     }
-    Write-Output "Check complete, $violations violations found.`n"
 }
 
 function turn {
     $desc = $args[1] ; $onOff = $args[0]  #Set and Clear Variables
-    $changed = 0; $unchanged = 0; $onOff = $onOff.ToLower(); $count = 0
-    $objects = $($mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $mapNS))
-    
-    if ($onOff -eq "on") {
-        foreach ($object in $objects) {
-            if ($object.Enabled -eq "false") {
-                $object.Enabled = "true"; $changed++
-            } else {
-                $unchanged++
-            }
-            $count++
-        }
-        Write-Output "Turned $onOff $changed of your $count $desc, $unchanged were already $onOff.`n"
-    } elseif ($onOff -eq "off") {
-        foreach ($object in $objects) {
-            if ($object.Enabled -eq "true") {
-                $object.Enabled = "false"; $changed++
-            } else {
-                $unchanged++
-            }
-            $count++
-        }
-        Write-Output "Turned $onOff $changed of your $count $desc, $unchanged were already $onOff.`n"
+    if ($desc -eq $null) {
+        Write-Output "No Block type passed to turn command.."
+    } elseif ($onOff -eq $null) {
+        Write-Output "No action passed to turn command.."
     } else {
-        Write-Output "Didn't understand action command for $desc`n"
+        $changed = 0; $unchanged = 0; $onOff = $onOff.ToLower(); $count = 0
+        $objects = $($mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_$desc']", $mapNS))
+    
+        if ($onOff -eq "on") {
+            foreach ($object in $objects) {
+                if ($object.Enabled -eq "false") {
+                    $object.Enabled = "true"; $changed++
+                } else {
+                    $unchanged++
+                }
+                $count++
+            }
+            Write-Output "Turned $onOff $changed of your $count $desc, $unchanged were already $onOff.`n"
+        } elseif ($onOff -eq "off") {
+            foreach ($object in $objects) {
+                if ($object.Enabled -eq "true") {
+                    $object.Enabled = "false"; $changed++
+                } else {
+                    $unchanged++
+                }
+                $count++
+            }
+            Write-Output "Turned $onOff $changed of your $count $desc, $unchanged were already $onOff.`n"
+        } else {
+            Write-Output "Didn't understand action command for $desc`n"
+        }
     }
 }
 
 function findThingsNear {
     $x = $args[0]; $y = $args[1]; $z = $args[2]; $dist = $args[3] #Set and Clear Variables
-    $cubeGrids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" ,$mapNS)
-    foreach ($cubeGrid in $cubeGrids) {
-        #Just for readability sake, not really nessessary...
-        [int]$checkX = $cubeGrid.PositionAndOrientation.Position.x; $xLo = ($x - $dist); $xHi = ($dist + $x)
-        [int]$checkY = $cubeGrid.PositionAndOrientation.Position.y; $yLo = ($y - $dist); $yHi = ($dist + $y)
-        [int]$checkZ = $cubeGrid.PositionAndOrientation.Position.z; $zLo = ($z - $dist); $zHi = ($dist + $z)
-        if ($checkX -gt $xLo -and $checkX -lt $xHi) {
-            # X coord in range
-            if ($checkY -gt $yLo -and $checkY -lt $yHi) {
-                # Y coord in range
-                if ($checkZ -gt $zLo -and $checkZ -lt $zHi) {
-                    #Z coord in range - we have a winner!
-                    $cubeGrid
+    $desc = $args[1] ; $onOff = $args[0]  #Set and Clear Variables
+    if ($x -eq $null) {
+        Write-Output "No X passed to findThingsNear command.."
+    } elseif ($y -eq $null) {
+        Write-Output "No Y passed to findThingsNear command.."
+    } elseif ($z -eq $null) {
+        Write-Output "No Z passed to findThingsNear command.."
+    } elseif ($dist -eq $null) {
+        Write-Output "No distance passed to findThingsNear command.."
+    } else {
+        $cubeGrids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" ,$mapNS)
+        foreach ($cubeGrid in $cubeGrids) {
+            #Just for readability sake, not really nessessary...
+            [int]$checkX = $cubeGrid.PositionAndOrientation.Position.x; $xLo = ($x - $dist); $xHi = ($dist + $x)
+            [int]$checkY = $cubeGrid.PositionAndOrientation.Position.y; $yLo = ($y - $dist); $yHi = ($dist + $y)
+            [int]$checkZ = $cubeGrid.PositionAndOrientation.Position.z; $zLo = ($z - $dist); $zHi = ($dist + $z)
+            if ($checkX -gt $xLo -and $checkX -lt $xHi) {
+                # X coord in range
+                if ($checkY -gt $yLo -and $checkY -lt $yHi) {
+                    # Y coord in range
+                    if ($checkZ -gt $zLo -and $checkZ -lt $zHi) {
+                        #Z coord in range - we have a winner!
+                        $cubeGrid
+                    }
                 }
             }
         }
@@ -195,19 +245,19 @@ function refreshRoids {
         foreach ($roid in $roids) {
             $response = findThingsNear $roid.PositionAndOrientation.Position.x $roid.PositionAndOrientation.Position.y $roid.PositionAndOrientation.Position.z $args[0]
             if ($($response.count) -eq 0) {
-                "Nothing found near $($roid.Filename)"
-                $removeRoid = "$saveLocation\$($roid.Filename)"
-                $originalRoid = "$origLocation\$($roid.Filename)"
+                Write-Output "Nothing found near $($roid.StorageName)"
+                $removeRoid = "$saveLocation\$($roid.StorageName).vx2"
+                $originalRoid = "$origLocation\$($roid.StorageName).vx2"
                 if (Test-Path $originalRoid) {
-                    "Replacing Roid $($roid.filename) with Original"
-                    Copy-Item $originalRoid $removeRoid -Force
+                    Write-Output "Replacing Roid $($roid.StorageName) with Original from $originalRoid"
+                    #Copy-Item $originalRoid $removeRoid -Force
                 }
             } else {
-                "Blocking structures found, skipped $($roid.Filename)"
+                Write-Output "Blocking structures found, skipped $($roid.StorageName)"
             }
         }
     } else {
-        "Distance is required!"
+        Write-Output "No Distance passed to refreshRoids command"
     }
 }
 
@@ -234,38 +284,42 @@ function removeFloaters {
 
 function removeJunk {
     $command = $args[0].ToLower(); $action = $args[1].ToLower() #Set and Clear Variables
-    $cubeGrids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" ,$mapNS)
-    if ($($cubeGrids.count) -gt 0) {
-        foreach ($cubeGrid in $cubeGrids) {
-            #Select all Beacons, Antennas, PistonTops and MotorRotors (Rotor Tops)
-            $blocksOfInterest = $cubeGrid.SelectNodes("CubeBlocks/MyObjectBuilder_CubeBlock[(@xsi:type='MyObjectBuilder_Beacon') or (@xsi:type='MyObjectBuilder_RadioAntenna') or (@xsi:type='MyObjectBuilder_MotorRotor') or (@xsi:type='MyObjectBuilder_PistonTop')]", $mapNS)
-            if ($blocksOfInterest.count -gt 0) {
-                #This cubegrid passed tests
-                if ($command -eq "list" -and ($action -eq "all" -or $action -eq "good")) {
-                    Write-Output "$($cubeGrid.DisplayName) has a Beacon/Antenna (Or Rotor/Piston Top)"
-                }
-            } else {
-                #This cubegrid failed tests
-                if ($command -eq "delete") {
-                    if ($action -eq "noconfirm") {
-                        Write-Output "Confirm passed - Deleted $($cubeGrid.DisplayName) without prompt.`n"
-                        $cubeGrid.ParentNode.removeChild($cubeGrid) | Out-Null
-                    } else {
-                        # Assume confirmation required
-                        if ((Read-Host "$($cubeGrid.DisplayName) has no Beacon/Antenna (Or Rotor/Piston Top) - Do you want to delete it? y/n").ToLower() -eq "y") {
-                            $cubeGrid.ParentNode.removeChild($cubeGrid) | Out-Null
-                        }
+    if ($command -eq $null) {
+        Write-Output "No Command passed to removeJunk"
+    } else {
+        $cubeGrids = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" ,$mapNS)
+        if ($($cubeGrids.count) -gt 0) {
+            foreach ($cubeGrid in $cubeGrids) {
+                #Select all Beacons, Antennas, PistonTops and MotorRotors (Rotor Tops)
+                $blocksOfInterest = $cubeGrid.SelectNodes("CubeBlocks/MyObjectBuilder_CubeBlock[(@xsi:type='MyObjectBuilder_Beacon') or (@xsi:type='MyObjectBuilder_RadioAntenna') or (@xsi:type='MyObjectBuilder_MotorRotor') or (@xsi:type='MyObjectBuilder_PistonTop') or (@xsi:type='MyObjectBuilder_Wheel')]", $mapNS)
+                if ($blocksOfInterest.count -gt 0) {
+                    #This cubegrid passed tests
+                    if ($command -eq "list" -and ($action -eq "all" -or $action -eq "good")) {
+                        Write-Output "$($cubeGrid.DisplayName) has a Beacon/Antenna (Or Rotor/Piston Top)"
                     }
-                } elseif ($command -eq "list" -and ($action -eq "all" -or $action -eq "bad")) {
-                    # Default Command - 'list bad'
-                    Write-Output "$($cubeGrid.DisplayName) has no Beacon/Antenna (Or Rotor/Piston Top)"
                 } else {
-                    Write-Host "Command not recognised"
+                    #This cubegrid failed tests
+                    if ($command -eq "delete") {
+                        if ($action -eq "noconfirm") {
+                            Write-Output "Confirm passed - Deleted $($cubeGrid.DisplayName) without prompt.`n"
+                            $cubeGrid.ParentNode.removeChild($cubeGrid) | Out-Null
+                        } else {
+                            # Assume confirmation required
+                            if ((Read-Host "$($cubeGrid.DisplayName) has no Beacon/Antenna (Or Rotor/Piston Top) - Do you want to delete it? y/n").ToLower() -eq "y") {
+                                $cubeGrid.ParentNode.removeChild($cubeGrid) | Out-Null
+                            }
+                        }
+                    } elseif ($command -eq "list" -and ($action -eq "all" -or $action -eq "bad")) {
+                        # Default Command - 'list bad'
+                        Write-Output "$($cubeGrid.DisplayName) has no Beacon/Antenna (Or Rotor/Piston Top)"
+                    } else {
+                        Write-Host "Action not recognised"
+                    }
                 }
             }
+        } else {
+            Write-Output "No CubeGrids found in map.`n"
         }
-    } else {
-        Write-Output "No CubeGrids found in map.`n"
     }
 
 }
@@ -356,7 +410,7 @@ if ([xml]$mapXML = Get-Content $saveLocation\SANDBOX_0_0_0_.sbs) {
 #Check the top section for more function Examples
 
 #removeFloaters $true
-
+#refreshRoids 500
 
 #Commit changes, uncomment this if you want changes to be saved when the script is run
 #saveIt
