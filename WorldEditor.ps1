@@ -228,9 +228,9 @@ function findThingsNearRoids {
     foreach ($roid in $roids) {
         $response = findThingsNear $roid.PositionAndOrientation.Position.x $roid.PositionAndOrientation.Position.y $roid.PositionAndOrientation.Position.z $args[0]
         if ($($response.count) -eq 0) {
-            "Nothing found near $($roid.Filename)`n"
+            "Nothing found near $($roid.StorageName)`n"
         } else {
-            "Things found near $($roid.Filename), listing:"
+            "Things found near $($roid.StorageName), listing:"
             foreach ($r in $response) {
                 Write-Output "$($r.DisplayName) found at X:$($r.PositionAndOrientation.Position.x) Y:$($r.PositionAndOrientation.Position.y) Z:$($r.PositionAndOrientation.Position.z)"
             }
