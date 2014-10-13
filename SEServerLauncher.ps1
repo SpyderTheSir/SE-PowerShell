@@ -1,7 +1,7 @@
 ﻿param (
     [string]$mapPath = "C:\Users\Administrator.MEDIABOX\AppData\Roaming\SpaceEngineersDedicated\Saves\Map",
 	[string]$SESEPath = "C:\games\SpaceEngineers\DedicatedServer64",
-    [string]$startArgs = @("autosave=10", "autostart"),
+    [string]$startArgs = @("autosave=10", "autostart", "nowcf"),
     [switch]$cantStopTheMagic = $true                 #Switch this to false for testing and true for live script
 )
 
@@ -13,9 +13,16 @@ function startSE {
     $ServerActive = Get-Process SEServerExtender -ErrorAction SilentlyContinue
     if ($ServerActive -eq $null) {
 	    Write-Output "$(timeStamp) Starting Server.."
-	    Start-Process -FilePath "$SESEPath\SeServerExtender.exe" -ArgumentList $startArgs -WorkingDirectory $SESEPath
-	    Write-Output "$(timeStamp) Waiting for server.."
-        Start-Sleep -Seconds 60
+	    #Start-Process -FilePath "$SESEPath\SeServerExtender.exe" -ArgumentList $startArgs -WorkingDirectory $SESEPath
+        $pinfo = New-Object System.Diagnostics.ProcessStartInfo
+        $pinfo.FileName = "$SESEPath\SeServerExtender.exe"
+        $pinfo.Arguments = $startArgs
+        $pinfo.WorkingDirectory = $SESEPath
+        $p = New-Object System.Diagnostics.Process
+        $p.StartInfo = $pinfo
+        $p.Start()
+        $p.ProcessorAffinity=0x2
+	    Write-Output "$(timeStamp) Server process launched.."
     } else {
 	    Write-Output "$(timeStamp) Server is already started.."
     }        

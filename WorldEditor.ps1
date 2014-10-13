@@ -76,7 +76,7 @@
 
 Param(
     # I've changed how this works. Now you just need to point it to your entire save folder. It is assumed that all your .vox, .sbc and .sbs files are in here
-    [string]$saveLocation = "$env:APPDATA\SpaceEngineersDedicated\Saves\Map",
+    [string]$saveLocation = "C:\temp", #"$env:APPDATA\SpaceEngineersDedicated\Saves\Map",
     [string]$origLocation = "E:\Backups\SEDS\Originals"
 )
 
@@ -217,13 +217,13 @@ function removeFloaters {
     if ($($floaters.count) -gt 0) {
         if ($flush -eq $true) {
             #Just delete, don't ask
-            foreach ($floater in $floaters) { $floater.ParentNode.removeChild($floater) }
+            foreach ($floater in $floaters) { $floater.ParentNode.removeChild($floater) | Out-Null }
             Write-Output "Confirm passed - Deleted $($floaters.count) $desc items without prompt.`n"
         } else {
             #Check first
             Write-Output "I have found $($floaters.count) $desc items for deletion."
             if ((Read-Host "Do you want to delete them all? y/n").ToLower() -eq "y") {
-                foreach ($floater in $floaters) { $floater.ParentNode.removeChild($floater) }
+                foreach ($floater in $floaters) { $floater.ParentNode.removeChild($floater) | Out-Null }
             }
         }
     } else {
@@ -249,11 +249,11 @@ function removeJunk {
                 if ($command -eq "delete") {
                     if ($action -eq "noconfirm") {
                         Write-Output "Confirm passed - Deleted $($cubeGrid.DisplayName) without prompt.`n"
-                        $cubeGrid.ParentNode.removeChild($cubeGrid)
+                        $cubeGrid.ParentNode.removeChild($cubeGrid) | Out-Null
                     } else {
                         # Assume confirmation required
                         if ((Read-Host "$($cubeGrid.DisplayName) has no Beacon/Antenna (Or Rotor/Piston Top) - Do you want to delete it? y/n").ToLower() -eq "y") {
-                            $cubeGrid.ParentNode.removeChild($cubeGrid)
+                            $cubeGrid.ParentNode.removeChild($cubeGrid) | Out-Null
                         }
                     }
                 } elseif ($command -eq "list" -and ($action -eq "all" -or $action -eq "bad")) {
