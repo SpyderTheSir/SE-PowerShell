@@ -20,7 +20,7 @@ function startSE {
         $pinfo.WorkingDirectory = $SESEPath
         $p = New-Object System.Diagnostics.Process
         $p.StartInfo = $pinfo
-        $p.Start()
+        $p.Start() | Out-Null
         $p.ProcessorAffinity=0x2
 	    Write-Output "$(timeStamp) Server process launched.."
     } else {
