@@ -64,9 +64,9 @@ if ([xml]$configXML = Get-Content $saveLocation\Sandbox.sbc) {
     # Loaded stuffs and ready to work
 
 
-    #listMods
+    listMods
 
-    cleanPlayers list all
+    #cleanPlayers list all
 
     saveIt
 

@@ -95,7 +95,7 @@
 
 Param(
     # I've changed how this works. Now you just need to point it to your entire save folder. It is assumed that all your .vx2, .sbc and .sbs files are in here
-    [string]$saveLocation = "$env:APPDATA\SpaceEngineersDedicated\Saves\Map",
+    [string]$saveLocation = "C:\Temp", #"$env:APPDATA\SpaceEngineersDedicated\Saves\Map",
     [string]$origLocation = "$env:APPDATA\SpaceEngineersDedicated\Backups\Map\"
 )
 
@@ -147,7 +147,7 @@ function checkMaxAllowed {
             if ($($blocks.count) -gt $maxAllowed) { # Check for Violation
                 #Get owner of first drill
                 $culprit = $configXML.SelectSingleNode("//AllPlayers/PlayerItem[PlayerId='$($blocks[0].Owner)']", $confNS)
-                Write-Output "$($cubeGrid.DisplayName) has $($blocks.count) $desc. It belongs to $($culprit.Name)"
+                Write-Output "$($cubeGrid.DisplayName) has $($blocks.count) $desc. It belongs to $($culprit.DisplayName)"
                 $violations++
             }
         }

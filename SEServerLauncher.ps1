@@ -22,7 +22,8 @@ function startSE {
         $p.StartInfo = $pinfo
         $p.Start() | Out-Null
         $p.ProcessorAffinity=0x2
-	    Write-Output "$(timeStamp) Server process launched.."
+        $ProcessID = $p.Id
+	    Write-Output "$(timeStamp) Server process launched, PID: $ProcessID.."
     } else {
 	    Write-Output "$(timeStamp) Server is already started.."
     }        
@@ -55,7 +56,7 @@ while ($cantStopTheMagic) {
         startSE
     } else {
 	    Write-Output "$(timeStamp) Server running, checking memory usage.."
-	    if ($ServerActive.WorkingSet64 -gt 3221225472 -or $ServerActive.WorkingSet64 -lt 0) { #Exactly 3GB in bytes
+	    if ($ServerActive.WorkingSet64 -gt 3221225472) { #Exactly 3GB in bytes
 	        Write-Output "$(timeStamp) Server over 3GB of memory usage."
             stopSE
             updateSE
