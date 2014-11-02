@@ -33,7 +33,7 @@ function startSE {
         $p = New-Object System.Diagnostics.Process
         $p.StartInfo = $pinfo
         $p.Start() | Out-Null
-        $p.ProcessorAffinity=0x2
+        #$p.ProcessorAffinity=0x2
         $ProcessID = $p.Id
 	    Write-Output "$(timeStamp) Server process launched, PID: $ProcessID.. Starting Launch Delay."
         Start-Sleep -Seconds $launchDelay
