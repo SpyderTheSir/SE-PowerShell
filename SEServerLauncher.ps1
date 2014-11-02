@@ -7,7 +7,7 @@
     [string]$backupsPath = "C:\CloudBackups",
     [int]$serverPort = 27016, #Set to 0 to skip connection test, or to the port your server is running on
     [int64]$memTest = 3221225472, #Set to 0 to skip memtest, or to the value the server proccess can not exceed
-    [int]$launchDelay = 120, #Delay after launch to allow server to come online properly
+    [int]$launchDelay = 240, # Script delay after launch to allow server to come online properly
     [string]$7zipExe = "C:\Program Files\7-Zip\7z.exe"
 )
 
@@ -109,18 +109,18 @@ while ($cantStopTheMagic) {
                 $receivebytes = $udpobject.Receive([ref]$remoteendpoint) 
                 [string]$returndata = $a.GetString($receivebytes)
                 If ($returndata) {
-                    Write-Output "Server is online, Received response from UDP port $serverPort" 
+                    Write-Output "$(timeStamp) Server is online, UDP port $serverPort responded" 
                     $udpobject.close()   
                 }                       
             } Catch { 
                 If ($Error[0].ToString() -match "\bRespond after a period of time\b") { 
                     $udpobject.Close()
-                    #We won't get false positives as this is being run from the localhost, so if we haven't 'forcibly closed' by now the port is up
-                    Write-Output "Server is online, Received response from UDP port $serverPort" 
+                    #We won't get false positives as this is being run from the localhost, so if we haven't 'forcibly closed' by now the port is up. Read up on UDP if this doesn't make sense :)
+                    Write-Output "$(timeStamp) Server is online, UDP port $serverPort not closed" 
                 } ElseIf ($Error[0].ToString() -match "forcibly closed by the remote host" ) { 
                     $udpobject.Close()
                     #Well, the server shut the port on us, that mean's it's online but there is no Space Engineers listening :(
-                    Write-Output "Server is offline! UDP port $serverPort refused by server"
+                    Write-Output "$(timeStamp) Server is offline! UDP port $serverPort closed."
                     stopSE #attempt to kill process as it's probably crashed
                     startSE #no update, this was a crash, lets get back up and running ASAP
                 } Else {
