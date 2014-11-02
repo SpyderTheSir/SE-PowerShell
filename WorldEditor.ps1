@@ -99,6 +99,68 @@ Param(
     [string]$origLocation = "$env:APPDATA\SpaceEngineersDedicated\Backups\Map\"
 )
 
+	
+
+function removeNoPower {  #rework in progress - best not to use for now
+$Objects = $ObjectsDeleted = $totalpiston = $totalwheels = 0 #Set and Clear Variables
+$nodes = $mapXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]" , $ns)
+    ForEach($node in $nodes){
+        Write-Output "`n"
+        $Objects += 1
+        $totalpower = [float]0 #Set and Clear Variables      
+        Write-Output "Checking grid $($node.EntityId)"
+        $ReactorCount = $node.SelectNodes("CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_Reactor']" , $ns).count
+        IF ($ReactorCount -ne 0) {
+            # there are reactors on the grid, lets check if they are functional and have feul to burn
+            $Reactors = $node.SelectNodes("CubeBlocks/MyObjectBuilder_CubeBlock[(@xsi:type='MyObjectBuilder_Reactor')]" , $ns)
+            ForEach ($Reactor in $Reactors){
+                $Reactorinventory = [float]$Reactor.inventory.items.MyObjectBuilder_InventoryItem.amount
+                $ReactorIntegrity = [float]$Reactor.IntegrityPercent
+                    IF ($Reactorinventory -ne $null -Or ($ReactorIntegrity -ne $null -and $ReactorIntegrity -gt 0.75)){
+                    $totalpower += $Reactorinventory
+                    } #if reactor is fully build and has uranium it will count as a powersource
+                    Else { Write-Output "Reactor Inventory = $Reactorinventory, Integrity = $ReactorIntegrity"}
+            } # reactors have been checked.
+        }
+        #Write-Output "  Powerpotential @ $totalpower "
+        $BatteryCount = $node.SelectNodes("CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_BatteryBlock']", $ns).count
+        IF ($BatteryCount -ne 0 <#-and $totalpower -eq 0#>) {
+            $Batterys = $node.SelectNodes("CubeBlocks/MyObjectBuilder_CubeBlock[(@xsi:type='MyObjectBuilder_BatteryBlock')]" , $ns)
+            # we have found batteries and grid has no working reactors. lets see if the batteries have some juice
+            ForEach ($Battery in $Batterys){
+                $BatteryJuice = [float]$Battery.CurrentStoredPower
+                $BatteryIntegrity = [float]$Battery.IntegrityPercent
+                IF ($BatteryJuice -ne $null -Or ($BatteryIntegrity -ne $null -and $BatteryIntegrity -gt 0.565)) #-and $BatteryJuice -ne 0)
+                    {$totalpower += [float]$Battery.CurrentStoredPower
+                    }#if battery is fully build and has juice it will count as a powersource
+                    Else { Write-Output " Battery juice = $BatteryJuice, Integrity = $ReactorIntegrity"}
+                }  
+        }
+        Write-Output "  Powerpotential @ $totalpower "
+        Write-Output "  grid $($node.EntityId) has $ReactorCount reactors and $BatteryCount batteries"                
+        IF ($totalpower -eq 0) {
+            #$rotorcount = $node.SelectNodes("CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_MotorRotor']", $ns).count
+            $pistoncount = $node.SelectNodes("CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_PistonTop']", $ns).count
+            $wheelcount = $node.SelectNodes("CubeBlocks/MyObjectBuilder_CubeBlock[@xsi:type='MyObjectBuilder_Wheel']", $ns).count
+            $ignoretotal = $pistoncount + $wheelcount
+            $totalwheels += $wheelcount
+            $totalpistons += $pistoncount
+            IF($ignoretotal -eq 0){
+                Write-Output " WIPING $($node.EntityId) !!."
+                Write-Output " it had $pistoncount Pistons or $wheelcount wheels"
+                $node.ParentNode.removeChild($node)
+                $ObjectsDeleted += 1
+                }
+            Else {Write-Output " Object not deleted, it had $pistoncount Pistons or $wheelcount wheels"}            
+        }
+    }# foreach grid
+Write-Output "`n"
+Write-Output "There where $Objects checked and $ObjectsDeleted where deleted!!`n"
+Write-Output "There where $totalpistons pitsons and $totalwheels wheels in the save`n"
+} #end function removeNoPower
+
+
+
 function wipe {
     $desc = $args[0]; $confirm = $args[1]; $wiped = 0 #Set and Clear Variables
     if ($desc -eq $null) {
